@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/graphics_frameLayout1"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent" >
+
+    <net.dgcgame.Game_View
+        android:id="@+id/GlView"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent" />
+
+        <TextView
+            android:id="@+id/finish"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="12.32"
+            android:text=""
+            android:textAppearance="?android:attr/textAppearanceLarge" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="0.79"
+        android:orientation="vertical" >
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="fill_parent"
+            android:layout_weight="12.32"
+            android:orientation="vertical" >
+        </LinearLayout>
+
+        <net.dgcgame.HUD
+            android:id="@+id/HUD"
+            android:layout_width="fill_parent"
+            android:layout_height="386dp"
+            android:gravity="center"
+            android:orientation="vertical" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal" >
+
+            <Button
+                android:id="@+id/buttonrestart"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Reiniciar" />
+
+            <Button
+                android:id="@+id/buttonleft"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Izq" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" >
+
+                <Button
+                    android:id="@+id/buttonup"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Arriba" />
+
+                <Button
+                    android:id="@+id/buttondown"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Abajo" />
+            </LinearLayout>
+
+            <Button
+                android:id="@+id/buttonright"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Derecha" />
+        </LinearLayout>
+    </LinearLayout>
+
+</FrameLayout>

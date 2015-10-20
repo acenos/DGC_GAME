@@ -1,0 +1,187 @@
+package net.dgcgame;
+
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.nio.ShortBuffer;
+
+import javax.microedition.khronos.opengles.GL10;
+
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.opengl.GLUtils;
+
+
+
+
+public class Grid {
+	private int filtro = 0; // Proximidad de textura
+	private int numTexturas = 5;
+	private int numFig = 1;
+	private FloatBuffer _vertexBuffer;
+	private ShortBuffer _indexBuffer;
+	private ShortBuffer _gridBuffer;
+	
+	public int altura, anchura;
+	private int num_index = 0;
+    private IntBuffer _indicesTextures[];
+    private FloatBuffer _texturesBuffer;
+    private final static float iTexturas[] = new float[] 
+	{
+		0, 0,
+		1, 0,
+		0, 1,
+		1, 1,
+	};
+    
+	public Grid(int h, int w)
+    {
+		altura = h;
+		anchura = w;
+		_indicesTextures = new IntBuffer[numTexturas];
+		float coords[] = new float[altura*anchura*3];
+    	for(int i=0; i<altura; i++)
+    	{
+    		for(int j=0; j<anchura; j++)
+    		{
+	    		coords[(i*anchura+j)*3]   = j*2-anchura+1;
+	    		coords[(i*anchura+j)*3+1] = 1;
+	    		coords[(i*anchura+j)*3+2] = -(i+2)*2;
+    		}
+    	}
+    	
+    	// Inicializamos el buffer de vŽrtices (intersecciones del grid)
+	    ByteBuffer vbb = ByteBuffer.allocateDirect(4*coords.length);
+	    vbb.order(ByteOrder.nativeOrder());
+	    _vertexBuffer = vbb.asFloatBuffer();
+	    for(int i=0; i<coords.length; i++)
+	    {
+	    	_vertexBuffer.put(i, coords[i]);
+	    }
+	    
+	    
+	    short[] grid = new short[(anchura+altura)*2];
+	    int k=0;
+    	for(int i=0; i<altura; i++)
+    	{
+    		grid[k] = (short) (i*anchura);
+    		grid[k+1] = (short) ((i+1)*anchura-1);
+    		k+=2;
+    	}
+    	for(int i=0; i<anchura; i++)
+    	{
+    		grid[k] = (short) i;
+    		grid[k+1] = (short) ((altura-1)*anchura+i);
+    		k+=2;
+    	}
+    	// Inicializamos el buffer del grid
+	    ByteBuffer igb = ByteBuffer.allocateDirect(4*grid.length);
+	    igb.order(ByteOrder.nativeOrder());
+	    _gridBuffer = igb.asShortBuffer();
+	    for(int i=0; i<grid.length; i++)
+	    {
+	    	_gridBuffer.put(i, grid[i]);
+	    }
+	    
+	    short[] index = new short[altura*anchura*6];
+	    float[] indexTex = new float[altura*anchura*6];
+    	for(int i=0; i<altura-1; i++)
+    	{
+    		for(int j=0; j<anchura-1; j++)
+    		{
+    			
+    			index[((anchura-1)*i + j)*6] 	 = (short) (anchura*i+j);
+    			index[((anchura-1)*i + j)*6+1] 	 = (short) (anchura*i+j+1);
+    			index[((anchura-1)*i + j)*6+2] 	 = (short) (anchura*(i+1)+j);
+
+    			index[((anchura-1)*i + j)*6+3] 	 = (short) (anchura*(i+1)+j);
+    			index[((anchura-1)*i + j)*6+4] 	 = (short) (anchura*i+j+1);
+    			index[((anchura-1)*i + j)*6+5] 	 = (short) (anchura*(i+1)+j+1);
+    			
+    			indexTex[((anchura-1)*i + j)*6] = iTexturas[(int)(((anchura-1)*i + j)*6)%4];
+    			indexTex[((anchura-1)*i + j)*6+1] = iTexturas[(int)(((anchura-1)*i + j)*6+1)%4];
+    			indexTex[((anchura-1)*i + j)*6+2] = iTexturas[(int)(((anchura-1)*i + j)*6+2)%4];
+    			indexTex[((anchura-1)*i + j)*6+3] = iTexturas[(int)(((anchura-1)*i + j)*6+3)%4];
+    			indexTex[((anchura-1)*i + j)*6+4] = iTexturas[(int)(((anchura-1)*i + j)*6+4)%4];
+    			indexTex[((anchura-1)*i + j)*6+5] = iTexturas[(int)(((anchura-1)*i + j)*6+5)%4];
+    		}
+    	}
+    	vbb = ByteBuffer.allocateDirect(4*indexTex.length);
+	    vbb.order(ByteOrder.nativeOrder());
+	    _texturesBuffer = vbb.asFloatBuffer();
+	    _texturesBuffer.put(indexTex);
+    	num_index = index.length;
+    	
+    	// Inicializamos el buffer de ’ndices
+	    ByteBuffer ibb = ByteBuffer.allocateDirect(4*index.length);
+	    ibb.order(ByteOrder.nativeOrder());
+	    _indexBuffer = ibb.asShortBuffer();
+	    for(int i=0; i<index.length; i++)
+	    {
+	    	_indexBuffer.put(i, index[i]);
+	    }
+    }
+	public void loadTexture(GL10 gl, Context context, int id) {
+    	// loading texture
+    	Bitmap texture = BitmapFactory.decodeResource(context.getResources(), id);
+    	gl.glEnable(GL10.GL_TEXTURE_2D);
+    	// generate one texture pointer
+    	gl.glGenTextures(3, _indicesTextures[0]);
+    	
+    	// setup texture 0
+        gl.glBindTexture(GL10.GL_TEXTURE_2D, _indicesTextures[0].get(0));
+        gl.glTexParameterx(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_NEAREST);
+        gl.glTexParameterx(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_NEAREST);
+        gl.glTexParameterx(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_S, GL10.GL_CLAMP_TO_EDGE);
+        gl.glTexParameterx(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_T, GL10.GL_CLAMP_TO_EDGE);
+        GLUtils.texImage2D(GL10.GL_TEXTURE_2D, 0, texture, 0);
+        
+        // setup texture 1
+        gl.glBindTexture(GL10.GL_TEXTURE_2D, _indicesTextures[0].get(1));
+        gl.glTexParameterx(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_LINEAR);
+        gl.glTexParameterx(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_LINEAR);
+        gl.glTexParameterx(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_S, GL10.GL_CLAMP_TO_EDGE);
+        gl.glTexParameterx(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_T, GL10.GL_CLAMP_TO_EDGE);
+        GLUtils.texImage2D(GL10.GL_TEXTURE_2D, 0, texture, 0);
+        
+        // setup texture 2
+        gl.glBindTexture(GL10.GL_TEXTURE_2D, _indicesTextures[0].get(2));
+        gl.glTexParameterx(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_LINEAR);
+        gl.glTexParameterx(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_LINEAR_MIPMAP_NEAREST);
+        gl.glTexParameterx(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_S, GL10.GL_CLAMP_TO_EDGE);
+        gl.glTexParameterx(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_T, GL10.GL_CLAMP_TO_EDGE);
+        Utils.generateMipmapsForBoundTexture(texture);
+    	/*// ...and bind it to our array
+    	
+    	gl.glBindTexture(GL10.GL_TEXTURE_2D, _texturesBuffer[0]);
+
+    	// create nearest filtered texture
+    	gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_NEAREST);
+    	gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_LINEAR);
+
+    	// Use Android GLUtils to specify a two-dimensional texture image from our bitmap
+    	GLUtils.texImage2D(GL10.GL_TEXTURE_2D, 0, bitmap, 0);
+		*/
+    	// Clean up
+    	texture.recycle();
+    }
+	
+	public void draw(GL10 gl)
+	{
+		gl.glBindTexture(GL10.GL_TEXTURE_2D, _indicesTextures[0].get(filtro));
+		
+		gl.glEnableClientState(GL10.GL_VERTEX_ARRAY); // para poder leer de buffer
+		gl.glEnableClientState(GL10.GL_TEXTURE_COORD_ARRAY);
+        
+		gl.glVertexPointer(3, GL10.GL_FLOAT, 0, _vertexBuffer);
+		gl.glTexCoordPointer(2, GL10.GL_FLOAT, 0, _texturesBuffer);
+        gl.glDrawElements(GL10.GL_TRIANGLES, num_index, GL10.GL_UNSIGNED_SHORT, _indexBuffer);
+        //gl.glColor4f(0f, 0f, 0f, 0.5f);
+        //gl.glDrawElements(GL10.GL_LINES, (anchura+altura)*2, GL10.GL_UNSIGNED_SHORT, _gridBuffer);
+        
+        gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
+        gl.glDisableClientState(GL10.GL_TEXTURE_COORD_ARRAY);
+	}
+}
